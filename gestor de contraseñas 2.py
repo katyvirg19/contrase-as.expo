@@ -3,9 +3,11 @@ from tkinter import messagebox
 from conexion import Conexion
 
 
-
+connector = Conexion('Conexion_DB.db')
+connector.crear_tablas()
 usuarios = {}
 credenciales_guardadas = {}
+
 
 def registrar():
     username = entry_username_registro.get()
@@ -21,6 +23,10 @@ def registrar():
     else:
         usuarios[username] = {'password': password, 'pin': pin}
         messagebox.showinfo("Registro", "Usuario registrado con éxito.")
+        
+        #Cargar el usuario en la base de datos
+        connector.registar_usuario(username, password)
+        
         entry_username_registro.delete(0, tk.END)
         entry_password_registro.delete(0, tk.END)
         entry_pin_registro.delete(0, tk.END)
@@ -29,12 +35,19 @@ def iniciar_sesion():
     username = entry_username_login.get()
     password = entry_password_login.get()
     
+    if (iniciar_sesion(username, password)):
+        messagebox.showinfo("Inicio de Sesión", "Inicio de sesión exitoso.")
+        abrir_ventana_principal(username)
+    else:
+        messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
+    """
     if username in usuarios and usuarios[username]['password'] == password:
         messagebox.showinfo("Inicio de Sesión", "Inicio de sesión exitoso.")
         abrir_ventana_principal(username)  
     else:
         messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
-
+    """
+        
 def recuperar_contraseña():
     username = entry_username_recuperar.get()
     pin = entry_pin_recuperar.get()
