@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
+from conexion import Conexion
+
 
 
 usuarios = {}
