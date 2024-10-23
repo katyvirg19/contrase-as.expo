@@ -123,13 +123,13 @@ def abrir_ventana_principal(username):
         else:
             messagebox.showinfo("Sin credenciales", "No hay credenciales guardadas para este usuario.")
 
-    
+    """
     def eliminar_credencial(sitio, ventana_credenciales):
         if sitio in credenciales_guardadas[username]:
             del credenciales_guardadas[username][sitio]
             messagebox.showinfo("Eliminado", f"Credenciales de {sitio} eliminadas.")
             ventana_credenciales.destroy()
-
+    """
     
     def cerrar_sesion():
         connector.desconecta()
