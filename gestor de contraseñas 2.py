@@ -25,7 +25,7 @@ def registrar():
         messagebox.showinfo("Registro", "Usuario registrado con éxito.")
         
         #Cargar el usuario en la base de datos
-        connector.registar_usuario(username, password)
+        connector.registar_usuario(username, password, pin)
         
         entry_username_registro.delete(0, tk.END)
         entry_password_registro.delete(0, tk.END)
@@ -35,11 +35,15 @@ def iniciar_sesion():
     username = entry_username_login.get()
     password = entry_password_login.get()
     
-    if (iniciar_sesion(username, password)):
+    global registro 
+    registro = connector.login_db(username, password)
+
+    if (registro):
         messagebox.showinfo("Inicio de Sesión", "Inicio de sesión exitoso.")
         abrir_ventana_principal(username)
     else:
         messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
+        return None
     """
     if username in usuarios and usuarios[username]['password'] == password:
         messagebox.showinfo("Inicio de Sesión", "Inicio de sesión exitoso.")
@@ -47,16 +51,21 @@ def iniciar_sesion():
     else:
         messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
     """
-        
+
 def recuperar_contraseña():
     username = entry_username_recuperar.get()
     pin = entry_pin_recuperar.get()
     
-    if username in usuarios and usuarios[username]['pin'] == pin:
-        password = usuarios[username]['password']
-        messagebox.showinfo("Recuperar Contraseña", f"La contraseña es: {password}")
+    respuesta = connector.recuperar_pass(username, pin)
+    if (respuesta):
+        messagebox.showinfo("Recuperar Contraseña", f"La contraseña es: {respuesta}")
     else:
         messagebox.showerror("Error", "Usuario o PIN incorrectos.")
+    # if username in usuarios and usuarios[username]['pin'] == pin:
+    #     password = usuarios[username]['password']
+    #     messagebox.showinfo("Recuperar Contraseña", f"La contraseña es: {password}")
+    # else:
+    #     messagebox.showerror("Error", "Usuario o PIN incorrectos.")
 
 def mostrar_frame_recuperar():
     frame_recuperar.pack(pady=10)
@@ -76,10 +85,11 @@ def abrir_ventana_principal(username):
         usuario_sitio = entry_usuario_sitio.get()
         password_sitio = entry_password_sitio.get()
 
-        if sitio and usuario_sitio and password_sitio:
+        if (connector.registrar_credenciales(registro[0], sitio, usuario_sitio, password_sitio)):
             if username not in credenciales_guardadas:
                 credenciales_guardadas[username] = {}
             credenciales_guardadas[username][sitio] = {'usuario': usuario_sitio, 'password': password_sitio}
+
             messagebox.showinfo("Guardado", "Credenciales guardadas con éxito.")
             entry_sitio.delete(0, tk.END)
             entry_usuario_sitio.delete(0, tk.END)
@@ -91,22 +101,27 @@ def abrir_ventana_principal(username):
     def mostrar_credenciales():
         pin = entry_pin_ver_credenciales.get()
 
-        if pin == usuarios[username]['pin']:
-            ventana_credenciales = tk.Toplevel(ventana_principal)
-            ventana_credenciales.title("Credenciales Guardadas")
-            if username in credenciales_guardadas:
-                row = 0
-                for sitio, datos in credenciales_guardadas[username].items():
-                    tk.Label(ventana_credenciales, text=f"Sitio: {sitio}").grid(row=row, column=0)
-                    tk.Label(ventana_credenciales, text=f"Usuario: {datos['usuario']}").grid(row=row, column=1)
-                    tk.Label(ventana_credenciales, text=f"Contraseña: {datos['password']}").grid(row=row, column=2)
-                    boton_eliminar = tk.Button(ventana_credenciales, text="Eliminar", command=lambda sitio=sitio: eliminar_credencial(sitio, ventana_credenciales))
-                    boton_eliminar.grid(row=row, column=3)
-                    row += 1
-            else:
-                messagebox.showinfo("Sin credenciales", "No hay credenciales guardadas para este usuario.")
+        resultados = connector.ver_credenciales(registro[0],pin)
+        ventana_credenciales = tk.Toplevel(ventana_principal)
+        ventana_credenciales.title("Credenciales Guardadas")
+        if(resultados):
+            messagebox.showinfo("Credenciales almacenadas", "Se encontraron las siguientes credenciales:")
+            row = 0  
+            for resultado in resultados:
+                sitio = resultado[2]  
+                usuario = resultado[3]  
+                contrasena = resultado[4] 
+                
+                tk.Label(ventana_credenciales, text=f"Sitio: {sitio}").grid(row=row, column=0)
+                tk.Label(ventana_credenciales, text=f"Usuario: {usuario}").grid(row=row, column=1)
+                tk.Label(ventana_credenciales, text=f"Contraseña: {contrasena}").grid(row=row, column=2)
+                
+                # boton_eliminar = tk.Button(ventana_credenciales, text="Eliminar", command=lambda sitio=sitio: eliminar_credencial(sitio, ventana_credenciales))
+                # boton_eliminar.grid(row=row, column=3)
+                
+                row += 1 
         else:
-            messagebox.showerror("Error", "PIN incorrecto.")
+            messagebox.showinfo("Sin credenciales", "No hay credenciales guardadas para este usuario.")
 
     
     def eliminar_credencial(sitio, ventana_credenciales):
@@ -117,6 +132,7 @@ def abrir_ventana_principal(username):
 
     
     def cerrar_sesion():
+        connector.desconecta()
         ventana_principal.destroy()  
         root.deiconify()  
 
